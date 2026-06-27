@@ -17,7 +17,7 @@ class JanelaPrincipal(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Trabalho 1 - Computação Gráfica - Yasmin Viegas")
+        self.setWindowTitle("Trabalho 1 e 2 - Computação Gráfica - Yasmin Viegas")
         self.setMinimumSize(900, 650)
         self.tela = Paint()
         self.setCentralWidget(self.tela)
@@ -29,35 +29,37 @@ class JanelaPrincipal(QMainWindow):
     # ------------------------------------------------------------------
 
     def _criar_toolbar(self):
+        # --- Toolbar 1: primitivas clássicas, algoritmos e ações ---
         tb = QToolBar("Principal")
         tb.setMovable(False)
         tb.setToolButtonStyle(Qt.ToolButtonTextOnly)
         self.addToolBar(Qt.TopToolBarArea, tb)
 
-        def sep():
-            s = QWidget(); s.setFixedWidth(6); tb.addWidget(s)
+        def sep(toolbar):
+            s = QWidget(); s.setFixedWidth(8); toolbar.addWidget(s)
 
-        def btn_toolbar(label, fn):
+        def btn_toolbar(toolbar, label, fn):
             b = QPushButton(label); b.setFixedHeight(28); b.clicked.connect(fn)
-            tb.addWidget(b); return b
+            toolbar.addWidget(b); return b
 
-        # Botões de modo -> apenas um ativo por vez
-        tb.addWidget(QLabel("  Modo: "))
         self._btns_modo = {}
+
+        # Modos de desenho das primitivas clássicas
+        tb.addWidget(QLabel("  Modo: "))
         for label, modo in [("Reta", "reta"), ("Círculo", "circulo"),
-                             ("Polígono", "poligono"), ("Selecionar", "selecionar"),
-                             ("Recortar", "recortar")]:
+                             ("Polígono", "poligono"),
+                             ("Selecionar", "selecionar"), ("Recortar", "recortar")]:
             b = QPushButton(label); b.setCheckable(True); b.setFixedHeight(28)
             b.clicked.connect(lambda _, m=modo: self._set_modo(m))
             tb.addWidget(b); self._btns_modo[modo] = b
-        sep()
+        sep(tb)
 
         # Seletor de algoritmo de rasterização de retas
         tb.addWidget(QLabel("  Alg.Reta: "))
         combo_reta = QComboBox(); combo_reta.addItems(["Bresenham", "DDA"]); combo_reta.setFixedHeight(28)
         combo_reta.currentTextChanged.connect(
             lambda t: setattr(self.tela, 'algoritmo_reta', 'dda' if t == 'DDA' else 'bresenham'))
-        tb.addWidget(combo_reta); sep()
+        tb.addWidget(combo_reta); sep(tb)
 
         # Seletor de algoritmo de recorte
         tb.addWidget(QLabel("  Alg.Recorte: "))
@@ -65,12 +67,27 @@ class JanelaPrincipal(QMainWindow):
         combo_recorte.currentTextChanged.connect(
             lambda t: setattr(self.tela, 'algoritmo_recorte',
                               'cohen_sutherland' if 'Cohen' in t else 'liang_barsky'))
-        tb.addWidget(combo_recorte); sep()
+        tb.addWidget(combo_recorte); sep(tb)
 
         for label, fn in [("Finalizar Polígono", self.tela.finalizar_poligono),
                           ("Limpar Recorte",     self.tela.limpar_recorte),
                           ("Limpar Tudo",        self.tela.limpar_tela)]:
-            btn_toolbar(label, fn)
+            btn_toolbar(tb, label, fn)
+
+        # --- Toolbar 2: curvas paramétricas ---
+        tb2 = QToolBar("Curvas Paramétricas")
+        tb2.setMovable(False)
+        tb2.setToolButtonStyle(Qt.ToolButtonTextOnly)
+        self.addToolBar(Qt.TopToolBarArea, tb2)
+
+        tb2.addWidget(QLabel("  Curvas Paramétricas: "))
+        for label, modo in [("Bezier", "bezier"), ("Interpolada", "interpolada")]:
+            b = QPushButton(label); b.setCheckable(True); b.setFixedHeight(28)
+            b.clicked.connect(lambda _, m=modo: self._set_modo(m))
+            tb2.addWidget(b); self._btns_modo[modo] = b
+        sep(tb2)
+
+        btn_toolbar(tb2, "Finalizar Curva", self.tela.finalizar_curva)
 
         self._set_modo("reta")
 

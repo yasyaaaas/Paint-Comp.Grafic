@@ -34,9 +34,9 @@ python main.py
 ### Funcionalidades
 
 #### Rasterização
-- **Reta — DDA**: Incremento fracionário com arredondamento
-- **Reta — Bresenham**: Aritmética inteira, selecionável via toolbar
-- **Círculo — Bresenham**: Exploração de simetria de octantes
+- **Reta - DDA**: Incremento fracionário com arredondamento
+- **Reta - Bresenham**: Aritmética inteira, selecionável via toolbar
+- **Círculo - Bresenham**: Exploração de simetria de octantes
 
 #### Recorte
 - **Cohen-Sutherland**: Codificação por região com refinamento iterativo

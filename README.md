@@ -1,5 +1,4 @@
 # Trabalho Prático — Computação Gráfica
-**Implementação de Algoritmos — Unidades 1 e 2**
 
 **Aluna:** Yasmin Cassemiro Viegas - 800989
 **Professora:** Rosilane Mota

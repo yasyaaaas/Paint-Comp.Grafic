@@ -382,7 +382,7 @@ class Paint(QWidget):
             entrada = {'pontos': list(self.pontos_curva), 'cor': self._cor_rgb()}
             self._curvas_bezier.append(entrada)
 
-        elif self.modo_desenho == "hermite":   # <-- HERMITE
+        elif self.modo_desenho == "hermite":
             if len(self.pontos_curva) != 4:
                 QMessageBox.warning(self, "Aviso",
                                      "A curva Hermite exige exatamente 4 pontos:\n"

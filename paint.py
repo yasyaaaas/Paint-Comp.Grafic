@@ -19,7 +19,7 @@ from algoritmos.formas import Ponto, Reta, Poligono, GerenciadorDesenho
 from algoritmos.rasterizacao import Rasterizador
 from algoritmos.transform import Transformador
 from curvas.bezier import CurvaBezier
-from curvas.interpolada import CurvaInterpolada
+from curvas.hermite import CurvaHermite
 
 ESPESSURA_LINHA = 2
 COR_SELECIONADO = QColor(255, 140, 0)  # laranja para destacar itens selecionados
@@ -41,15 +41,15 @@ class Paint(QWidget):
         self.pontos_poligono: list = []  # vértices coletados do polígono em construção
 
         # Pontos de controle coletados para a curva em construção.
-        # Bézier: qualquer número de pontos — extremos são interpolados, intermediários atraem.
-        # Interpolada: qualquer número de pontos — a curva passa por todos eles.
+        # Bézier: qualquer número de pontos - extremos são interpolados, intermediários atraem.
+       # Hermite: exatamente 4 pontos: [P0, R0, R1, P1].
         # Em ambos os casos a curva só é finalizada ao clicar em "Finalizar Curva".
         self.pontos_curva: list = []
 
         # Listas persistentes de curvas já finalizadas.
         # Cada entrada é um dict com os pontos de controle e a cor usada.
         self._curvas_bezier:      list = []  # [{pontos: [(x,y)…], cor: (r,g,b)}]
-        self._curvas_interpolada: list = []  # [{pontos: [(x,y)…], cor: (r,g,b)}]
+        self._curvas_hermite: list = []      # [{pontos: [(x,y)…], cor: (r,g,b)}]
 
         self.cor_foreground = QColor(0, 0, 0)
         self.cor_background = QColor(255, 255, 255)
@@ -76,10 +76,10 @@ class Paint(QWidget):
 
         self.rasterizador = Rasterizador(self._pixel_cb)
 
-        # Instâncias dos renderizadores de curvas — recebem _rasterizar_reta como
+        # Instâncias dos renderizadores de curvas - recebem _rasterizar_reta como
         # callback para que respeitem o algoritmo de reta escolhido pelo usuário.
-        self.bezier      = CurvaBezier(self._rasterizar_reta)
-        self.interpolada = CurvaInterpolada(self._rasterizar_reta)
+        self.bezier = CurvaBezier(self._rasterizar_reta)
+        self.hermite = CurvaHermite(self._rasterizar_reta)
 
         self.setMouseTracking(True)
 
@@ -176,13 +176,12 @@ class Paint(QWidget):
             self._definir_cor_rasterizador()
             self.bezier.desenhar(curva['pontos'])
 
-        # --- Curvas Interpoladas (Lagrange) ---
-        # A curva passa exatamente por todos os pontos clicados.
-        # Os nós são calculados por comprimento de corda dentro do renderizador.
-        for curva in self._curvas_interpolada:
+        # --- Curvas de Hermite ---
+        # Cada curva espera exatamente 4 pontos: [P0, R0, R1, P1]
+        for curva in self._curvas_hermite:
             self.cor_foreground = QColor(*curva['cor'])
             self._definir_cor_rasterizador()
-            self.interpolada.desenhar(curva['pontos'])
+            self.hermite.desenhar(curva['pontos'])
 
         self.update()
 
@@ -207,7 +206,7 @@ class Paint(QWidget):
         # Preview dos pontos de controle da curva em construção
         # Exibe pequenos círculos em cada ponto clicado e linhas conectando-os,
         # formando o polígono de controle visível enquanto o usuário ainda clica.
-        if self.pontos_curva and self.modo_desenho in ("bezier", "interpolada"):
+        if self.pontos_curva and self.modo_desenho in ("bezier", "hermite"):
             painter.setPen(QPen(QColor(120, 120, 220), 1, Qt.DashLine))
             for i, pt in enumerate(self.pontos_curva):
                 # Pequeno marcador circular em cada ponto clicado
@@ -247,7 +246,7 @@ class Paint(QWidget):
             "selecionar":   lambda: self._press_selecionar(pos),
             "recortar":     lambda: self._press_recortar(pos),
             "bezier":       lambda: self._press_curva(x, y),
-            "interpolada":  lambda: self._press_curva(x, y),
+            "hermite":      lambda: self._press_curva(x, y),
         }
         handler.get(self.modo_desenho, lambda: None)()
 
@@ -349,7 +348,7 @@ class Paint(QWidget):
         # Duplo clique finaliza o polígono ou a curva em construção
         if self.modo_desenho == "poligono":
             self.finalizar_poligono()
-        elif self.modo_desenho in ("bezier", "interpolada"):
+        elif self.modo_desenho in ("bezier", "hermite"):
             self.finalizar_curva()
 
     # ------------------------------------------------------------------
@@ -367,23 +366,32 @@ class Paint(QWidget):
 
     def finalizar_curva(self):
         """
-        Finaliza a curva em construção e a armazena na lista persistente.
-
-        Requer pelo menos 2 pontos para Bézier e Interpolada. A curva é
-        rasterizada imediatamente e adicionada à lista do tipo ativo,
-        de forma análoga ao finalizar_poligono.
+        Finaliza a curva em construção.
+        - Bézier: aceita 2 ou mais pontos.
+        - Hermite: exige exatamente 4 pontos.
         """
-        if len(self.pontos_curva) < 2:
-            self.pontos_curva = []
-            self.update()
+        if not self.pontos_curva:
             return
 
-        entrada = {'pontos': list(self.pontos_curva), 'cor': self._cor_rgb()}
-
         if self.modo_desenho == "bezier":
+            if len(self.pontos_curva) < 2:
+                QMessageBox.warning(self, "Aviso", "A curva Bézier precisa de pelo menos 2 pontos.")
+                self.pontos_curva = []
+                self.update()
+                return
+            entrada = {'pontos': list(self.pontos_curva), 'cor': self._cor_rgb()}
             self._curvas_bezier.append(entrada)
-        elif self.modo_desenho == "interpolada":
-            self._curvas_interpolada.append(entrada)
+
+        elif self.modo_desenho == "hermite":   # <-- HERMITE
+            if len(self.pontos_curva) != 4:
+                QMessageBox.warning(self, "Aviso",
+                                     "A curva Hermite exige exatamente 4 pontos:\n"
+                                     "P0 (início), R0, R1, P1 (fim).")
+                self.pontos_curva = []
+                self.update()
+                return
+            entrada = {'pontos': list(self.pontos_curva), 'cor': self._cor_rgb()}
+            self._curvas_hermite.append(entrada)
 
         self.pontos_curva = []
         self.redesenhar_tudo()
@@ -401,7 +409,7 @@ class Paint(QWidget):
         self.pontos_curva = []
         self.ponto_inicio = None
         self._curvas_bezier = []
-        self._curvas_interpolada = []
+        self._curvas_hermite = []
         self.gerenciador.itens_selecionados = []
         self.update()
 

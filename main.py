@@ -2,6 +2,8 @@
 Aplicação Principal de Desenho para Computação Gráfica
 """
 
+from cProfile import label
+from cProfile import label
 import sys
 
 from PyQt5.QtWidgets import (
@@ -81,7 +83,7 @@ class JanelaPrincipal(QMainWindow):
         self.addToolBar(Qt.TopToolBarArea, tb2)
 
         tb2.addWidget(QLabel("  Curvas Paramétricas: "))
-        for label, modo in [("Bezier", "bezier"), ("Interpolada", "interpolada")]:
+        for label, modo in [("Bezier", "bezier"), ("Hermite", "hermite")]:
             b = QPushButton(label); b.setCheckable(True); b.setFixedHeight(28)
             b.clicked.connect(lambda _, m=modo: self._set_modo(m))
             tb2.addWidget(b); self._btns_modo[modo] = b

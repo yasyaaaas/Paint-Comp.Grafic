@@ -78,7 +78,7 @@ python main.py
 
 #### Curvas
 - **Bézier**: Aproximação polinomial via polinômios de Bernstein. A curva interpola apenas os pontos extremos, os pontos intermediários são de controle e atraem a curva sem ser tocados por ela
-- **Interpolada (Catmull-Rom Spline)**: A curva passa exatamente por todos os pontos clicados. As tangentes em cada ponto são calculadas implicitamente a partir dos pontos vizinhos, produzindo uma transição suave entre segmentos
+- **Hermite (Cúbica)**: Curva que interpola dois pontos extremos (P0 e P1) e utiliza dois pontos adicionais (R0 e R1) para controlar as tangentes. A tangente em P0 é T0 = R0 − P0, e em P1 é T1 = P1 − R1. A curva passa exatamente por P0 e P1; R0 e R1 definem a forma, mas não são tocados pela curva.
 
 #### Interface
 - Segunda toolbar exclusiva para curvas paramétricas, separada visualmente da toolbar do TP1
@@ -87,15 +87,14 @@ python main.py
 
 ### Como Usar
 
-- Desenhar curva de Bézier: Selecionar modo **Bézier** -> clicar nos pontos de controle -> botão **Finalizar Curva** ou duplo clique
-- Desenhar curva interpolada: Selecionar modo **Interpolada (Catmull-Rom)** -> clicar nos pontos -> botão **Finalizar Curva** ou duplo clique
+- Desenhar curva de Bézier: Selecionar modo **Bézier** -> clicar nos pontos de controle (mínimo 2) -> botão **Finalizar Curva** ou duplo clique
+- Desenhar curva Hermite: Selecionar modo **Hermite** -> clicar exatamente 4 pontos na ordem: P0 (início), R0 (controle da tangente em P0), R1 (controle da tangente em P1) e P1 (fim) -> botão **Finalizar Curva** ou duplo clique
 - Durante a construção, os pontos clicados aparecem marcados e conectados por uma linha tracejada azul mostrando o polígono de controle
-- É possível alternar cores e modos livremente entre curvas
 
 ### Referências dos algoritmos
 
 - **Bézier**: Gist "Draw Bezier curves using Python and PyQt" -> https://gist.github.com/1274149/ca37e497b3f2a16c9d3ec4889ed63c80986e9dba
-- **Catmull-Rom**: Implementação adaptada de resposta no Math StackExchange -> https://math.stackexchange.com/revisions/d6f0ff6b-bf93-4472-a53f-a0cfba902487/view-source
+- **Hermite**: Adaptado de vedantyadu/Hermite-cubic-spline → https://github.com/vedantyadu/Hermite-cubic-spline
 
 ---
 
@@ -112,5 +111,5 @@ python main.py
 │   └── transform.py     # Transformações geométricas 2D
 └── curvas/
     ├── bezier.py        # Curva de Bézier via polinômios de Bernstein
-    └── interpolada.py   # Curva interpolada via Catmull-Rom Spline
+    └── hermite.py       # Curva de Hermite cúbica
 ```
